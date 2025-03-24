@@ -189,6 +189,37 @@ export default function FormComponent() {
       if (result.status === "success") {
         message.success("Form submitted successfully!");
         generatePDF(formDataObject, checkboxes);
+        mainForm.resetFields();
+        setSignatureData(null);
+        setAddress("");
+        if (sigCanvas.current) {
+          sigCanvas.current.clear();
+        }
+
+        setCheckboxes({
+          pregnant: false,
+          nursing: false,
+          skinAllergies: false,
+          allergiesToSepcificIngredientsOrProducts: false,
+          medicalConditions: false,
+          recentFacialSurgeriesOrTreatment: false,
+          otherMedicalConcerns: false,
+          oily: false,
+          sensitive: false,
+          dry: false,
+          acneProne: false,
+          combination: false,
+          aging: false,
+          other: false,
+        });
+      
+        setFormData({
+          allergiesToSepcificIngredientsOrProducts: "",
+          recentFacialSurgeriesOrTreatment: "",
+          otherMedicalConcerns: "",
+          other: "",
+        });
+        
       } else {
         message.error(`Error: ${result.message}`);
       }
@@ -508,8 +539,14 @@ export default function FormComponent() {
       // Display the information
       doc.text("Products Used:", 20, yOffset);
       doc.setFont("helvetica", "normal");
-      doc.text(productsUsed, 60, yOffset);
-      yOffset += 7;
+      // doc.text(productsUsed, 60, yOffset);
+      const wrappedProducts = doc.splitTextToSize(productsUsed, 134);
+      wrappedProducts.forEach((line) => {
+        doc.text(line, 60, yOffset);
+        yOffset += 5;
+
+      });
+      yOffset += 2;
 
       doc.setFont("helvetica", "bold");
       doc.text("Frequency:", 20, yOffset);
@@ -871,7 +908,7 @@ export default function FormComponent() {
                 )}
               </div>
             </div>
-            <div
+          {/* <div
               className="col-12 col-lg-6 mt-3 mt-lg-0"
               style={{ fontSize: "18px" }}
             >
@@ -986,7 +1023,95 @@ export default function FormComponent() {
                   />
                 )}
               </div>
-            </div>
+            </div> */}
+            <div className="col-12 col-lg-6 mt-3 mt-lg-0" style={{ fontSize: "18px" }}>
+  <div>
+    <p className="m-0 p-0" style={{ fontSize: "20px", fontWeight: "bold", color: "#1364AE" }}>
+      SKIN HISTORY
+    </p>
+    <p className="m-0 p-0">Please check any of the following that apply to you:</p>
+  </div>
+
+  {/* First row */}
+  <div className="d-flex gap-5 mt-2">
+    <div style={{ width: "35%" }}>
+      <Checkbox name="oily" checked={checkboxes.oily} onChange={handleCheckboxChange}>
+        Oily
+      </Checkbox>
+    </div>
+    <div style={{ width: "35%" }}>
+      <Checkbox name="sensitive" checked={checkboxes.sensitive} onChange={handleCheckboxChange}>
+        Sensitive
+      </Checkbox>
+    </div>
+  </div>
+
+  {/* Second row */}
+  <div className="d-flex gap-5 mt-2">
+    <div style={{ width: "35%" }}>
+      <Checkbox name="dry" checked={checkboxes.dry} onChange={handleCheckboxChange}>
+        Dry
+      </Checkbox>
+    </div>
+    <div style={{ width: "35%" }}>
+      <Checkbox name="acneProne" checked={checkboxes.acneProne} onChange={handleCheckboxChange}>
+        Acne-Prone
+      </Checkbox>
+    </div>
+  </div>
+
+  {/* Third row */}
+  <div className="d-flex gap-5 mt-2">
+    <div style={{ width: "35%" }}>
+      <Checkbox name="combination" checked={checkboxes.combination} onChange={handleCheckboxChange}>
+        Combination
+      </Checkbox>
+    </div>
+    <div style={{ width: "35%" }}>
+      <Checkbox name="aging" checked={checkboxes.aging} onChange={handleCheckboxChange}>
+        Aging
+      </Checkbox>
+    </div>
+  </div>
+
+  {/* Fourth row - Force "Other" to align under "Aging" */}
+  <div className="d-flex gap-5 mt-2">
+    <div style={{ width: "35%", visibility: "hidden" }}></div> {/* Empty div to maintain spacing */}
+    <div style={{ width: "35%" }}>
+      <Checkbox name="other" checked={checkboxes.other} onChange={handleCheckboxChange}>
+        Other
+      </Checkbox>
+    </div>
+  </div>
+
+  {/* Show TextArea when "Other" is checked */}
+  {checkboxes.other && (
+    <div className="mt-2">
+      <TextArea
+        rows={3}
+        showCount
+        maxLength={100}
+        placeholder="Please specify..."
+        value={formData.other || ""}
+        onChange={(e) => {
+          let value = e.target.value;
+          let lines = value.split("\n");
+          if (lines.length > 2 || value.length > 100) {
+            message.warning("Input limited to 2 lines, 100 characters. Excess text won't be included.");
+            value = lines.slice(0, 2).join("\n"); // Trim excess lines
+          }
+
+          setFormData((prev) => ({
+            ...prev,
+            other: value, // ✅ Store input properly
+          }));
+        }}
+        className="input-box"
+      />
+    </div>
+  )}
+</div>
+
           </div>
         </div>
         <Form
@@ -1014,16 +1139,38 @@ export default function FormComponent() {
                     rules={[
                       {
                         required: true,
-                        message: "Please select the products you use",
+                        message: "Please enter the products you use",
                       },
                     ]}
                   >
-                    <Select placeholder="Select a product" 
+                {/* <Input placeholder="Enter the products you use" showCount  maxLength={100}/> */}
+                <Input
+    placeholder="Enter the products you use"
+    // showCount
+    // maxLength={100}
+    value={formData.productsUsed || ""}
+    onChange={(e) => {
+      let value = e.target.value;
+      let lines = value.split("\n");
+
+      if (lines.length > 1 || value.length > 100) {
+        message.warning("Input limited to 1 line, 100 characters. Excess text won't be included.");
+        value = lines[0].slice(0, 100); // Keep only the first line and trim excess text
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        productsUsed: value, // ✅ Store input properly
+      }));
+    }}
+  />
+
+                    {/* <Select placeholder="Select a product" 
                     onChange={(value) => handleDropdownChange(value, "productsUsed")}>
                       <ProductOption value="Product 1" />
                       <ProductOption value="Product 2" />
                       <ProductOption value="Product 3" />
-                    </Select>
+                    </Select> */}
                   </Form.Item>
                 </div>
                 <div className="col-md-6">
